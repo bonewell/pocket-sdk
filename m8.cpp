@@ -67,7 +67,7 @@ private:
 
 	empire::Graph<T> graph_;
 	empire::GraphView<T> view_;
-	empire::Point position_{75, 75};
+	empire::Point position_{250, 100};
 	Anime anime_;
 	Stage stage_{Stage::Idle};
 	std::vector<bwgui::Color> colors_;

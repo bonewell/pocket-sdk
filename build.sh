@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 
-wasm=$1
+project=$1
+wasm=$2
 
 if [ -z ${wasm} ]; then
   echo "Build native"
-  c++ -std=c++17 -o ctree ctree.cpp `sdl2-config --cflags --libs`
+  c++ -std=c++17 -o ${project} build/${project}.cpp `sdl2-config --cflags --libs`
 else
   echo "Build wasm"
-  emcc -c ctree.cpp -o ctree.o -s USE_SDL=2 --std=c++17
-  emcc ctree.o -o ctree.html -s USE_SDL=2
+  emcc -c ${project}.cpp -o build/${project}.o -s USE_SDL=2 --std=c++17
+  emcc build/${project}.o -o build/${project}.html -s USE_SDL=2
 fi
 
