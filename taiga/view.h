@@ -107,7 +107,7 @@ void DrawVertex(bwgui::Application& app, Vertex<T, debug> const& vertex)
 	{
 		bwgui::SetBrushColor(app.renderer(), vertex.box.color);
 		bwgui::DrawRectangle(app.renderer(), vertex.box.rect);
-	}	
+	}
 }
 
 void DrawTuft(bwgui::Application& app, Tuft const& tuft)
@@ -129,6 +129,33 @@ void traverse(Link<T> const& link, VertexFunctor<T> func)
 	func(link->value, link->left, link->right);
 	if (link->left) traverse(link->left, func);
 	if (link->right) traverse(link->right, func);
+}
+
+template<typename T, bool debug>
+bool is_inside(Point const& p, Vertex<T, debug> const& vertex)
+{
+	auto const R2 = vertex.style.R2();
+	auto const dx = p.x - vertex.center.x;
+	auto const dy = p.y - vertex.center.y;
+	return dx * dx + dy * dy <= R2;
+}
+
+template<typename T, typename U = Thread>
+Link<T, U>& locate(Link<T, U>& link, Point const& p)
+{
+	if (!link) return link;
+	if (is_inside(p, link->value)) return link;
+	if (p.x < link->value.center.x)
+	{
+		if (auto& l = locate(link->left, p)) return l;
+		return locate(link->right, p);
+	}
+	else if (p.x >= link->value.center.x)
+	{
+		if (auto& l = locate(link->right, p)) return l;
+		return locate(link->left, p);
+	}
+	return link;
 }
 
 template<typename T, bool debug>

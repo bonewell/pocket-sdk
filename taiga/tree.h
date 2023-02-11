@@ -130,5 +130,14 @@ void apply(Link<T, U>& link, ModifyFunctor<T> func)
 	if (link->right) apply(link->right, func);
 }
 
+template<typename T, typename U = Thread>
+Link<T, U>& find(Link<T, U> const& link, T const& v)
+{
+	if (!link) return nullptr;
+	if (link->value == v) return link;
+	if (v < link->value) return find(link->left, v);
+	if (link->value < v) return find(link->right, v);
+}
+
 } // namespace taiga
 #endif // _TREE_H_

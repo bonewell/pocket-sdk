@@ -20,7 +20,8 @@ struct VertexStyle
 	bwgui::Color border;
 	double radius{0.0};
 
-	constexpr double D() { return 2.0 * radius; }
+	constexpr double D() const { return 2.0 * radius; }
+	constexpr double R2() const { return radius * radius; }
 };
 constexpr VertexStyle BlackWhiteVertexStyle{BlackWhiteFontStyle, bwgui::Black, bwgui::White, 50.0};
 

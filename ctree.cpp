@@ -5,10 +5,6 @@
 #include "taiga/thread_tree.h"
 #include "taiga/view.h"
 
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#endif
-
 #include <random>
 
 constexpr taiga::TreeStyle NewYearTreeStyle
@@ -84,17 +80,19 @@ public:
 
 	void OnLoop() override;
 	void OnRender() override;
+	void OnClick(bwgui::Point<int> p) override;
 	
 private:
 	taiga::ThreadTreeView<T> view_;
 	std::default_random_engine engine_{static_cast<unsigned>(time(nullptr))};
 	std::uniform_int_distribution<> show_{1, 100};
-	std::uniform_int_distribution<> hide_{1, 5};
+	std::uniform_int_distribution<> hide_{1, 50};
+	taiga::Point zero_{500.0, 100.0};
 };
 
 template<typename T>
 TreeGui<T>::TreeGui(taiga::ThreadTree<T> tree)
-	: Application("New Year", 50)
+	: Application("tree_gui", 50)
 {
 	view_ = ::CreateView(tree, NewYearTreeStyle);
 }
@@ -126,8 +124,18 @@ void TreeGui<T>::OnLoop()
 template<typename T>
 void TreeGui<T>::OnRender()
 {
-	taiga::Point zero{1100.0, 100.0};
-	taiga::DrawThreadTree(*this, view_, zero);
+	taiga::DrawThreadTree(*this, view_, zero_);
+}
+
+template<typename T>
+void TreeGui<T>::OnClick(bwgui::Point<int> p)
+{
+	taiga::Point point{static_cast<double>(p.x - zero_.x), static_cast<double>(p.y - zero_.y)};
+	auto& link = taiga::locate(view_.root, point);
+	if (link)
+	{
+		link->value.style.background = link->value.style.label.color;
+	}
 }
 
 int main()
