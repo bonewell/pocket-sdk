@@ -116,15 +116,9 @@ void FillCircle(SDL_Renderer* renderer, Circle<T> const& circle)
 }
 
 template<typename T>
-void DrawChar(SDL_Renderer* renderer, char letter, Point<T> const& center, double size)
+void DrawChar(SDL_Renderer* renderer, font::Char const& calligraphy, Point<T> const& p, double size)
 {
-	auto const& calligraphy = font::GetCalligraphy(letter);
-	Point<T> const p
-	{
-		center.x - size * double(calligraphy[0].size()) / 2,
-		center.y - size * double(calligraphy.size()) / 2
-	};
-	auto border = size * 0.3;
+	auto const border = size * 0.3;
 	Rectangle<T> rect{p, {size - border, size - border}};
 	for (auto const& row: calligraphy)
 	{
@@ -136,6 +130,30 @@ void DrawChar(SDL_Renderer* renderer, char letter, Point<T> const& center, doubl
 		}
 		rect.p.x = p.x;
 		rect.p.y += size;
+	}
+}
+
+template<typename T>
+void DrawChar(SDL_Renderer* renderer, char letter, Point<T> const& center, double size)
+{
+	auto const& calligraphy = font::GetCalligraphy(letter);
+	Point<T> const p
+	{
+		center.x - size * double(calligraphy[0].size()) / 2,
+		center.y - size * double(calligraphy.size()) / 2
+	};
+	DrawChar(renderer, calligraphy, p, size);
+}
+
+template<typename T>
+void DrawText(SDL_Renderer* renderer, std::string const& text, Point<T> const& position, double size)
+{
+	auto p = position;
+	for (auto c: text)
+	{
+		auto const& calligraphy = font::GetCalligraphy(c);
+		DrawChar(renderer, calligraphy, p, size);	
+		p.x += calligraphy[0].size() * size + size;
 	}
 }
 

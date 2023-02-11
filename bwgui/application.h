@@ -109,7 +109,6 @@ void Application::OnEvent(SDL_Event& event)
 				case SDLK_h: scale_ -= 0.1; break;
 				case SDLK_j: scale_ += 0.1; break;
 			}; break;
-		case SDL_MOUSEBUTTONDOWN:
 		case SDL_MOUSEBUTTONUP:
 			if (event.button.clicks == 1)
 				OnClick({event.button.x, event.button.y});
