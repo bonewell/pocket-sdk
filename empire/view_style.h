@@ -32,12 +32,20 @@ struct Padding
 };
 constexpr Padding DefaultPadding{200.0, 200.0};
 
+struct MarkerStyle
+{
+	bool visible;
+	double size;
+};
+constexpr MarkerStyle BlackWhiteMarkerStyle{true, 10.0};
+
 struct EdgeStyle
 {
+	MarkerStyle marker;
 	FontStyle label;
 	bwgui::Color color;
 };
-constexpr EdgeStyle BlackWhiteEdgeStyle{{bwgui::White, 3.0}, bwgui::Gray};
+constexpr EdgeStyle BlackWhiteEdgeStyle{BlackWhiteMarkerStyle,{bwgui::White, 3.0}, bwgui::Gray};
 
 struct GraphStyle
 {

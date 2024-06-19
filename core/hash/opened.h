@@ -1,11 +1,14 @@
-﻿#include <exception>
+﻿#ifndef _OPENED_H_
+#define _OPENED_H_
+
+#include <exception>
 #include <list>
 #include <optional>
 #include <random>
 #include <vector>
 #include <utility>
 
-namespace opened
+namespace core::opened
 {
 template<typename K, typename V>
 using Cell = std::optional<std::pair<K, V>>;
@@ -274,4 +277,6 @@ std::ostream& operator<<(std::ostream& out, SortedHash<K, V, F> const& h)
 	return out << '\n';
 }
 
-} // opened
+} // namespace core::opened
+
+#endif // _OPENED_H_

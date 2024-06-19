@@ -1,4 +1,10 @@
-﻿long long gcd(long long a, long long b)
+﻿#ifndef _GCD_H_
+#define _GCD_H_
+
+namespace core
+{
+
+long long gcd(long long a, long long b)
 {
 	while(b != 0)
 	{
@@ -8,3 +14,7 @@
 	}
 	return a;
 }
+
+} // namespace core
+
+#endif // _GCD_H_

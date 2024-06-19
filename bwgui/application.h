@@ -25,7 +25,8 @@ class Application
 public:
 	explicit Application(std::string name, int delay = 1000);
 
-	Size<int> GetSize() const { return {width, height}; }
+	Size<int> GetSize() const { return size_; }
+	void Resize(Size<int> const& size) { size_ = size; }
 	SDL_Renderer* renderer() const { return renderer_; }
 	
 	void SetScale(double scale) { scale_ = scale; }
@@ -38,23 +39,21 @@ public:
 	virtual void OnRender() = 0;
 	
 protected:
-	constexpr static Rectangle<int> background() { return {0, 0, width, height}; }
+	Rectangle<int> background() { return {{0, 0}, size_}; }
 
 private:
-	constexpr static int width = 2266;
-	constexpr static int height = 1075;
-
 	friend void DoInLoop(void*);
-	bool OnInit();
+	bool Init();
 	void DoWork();
 	void OnEvent(SDL_Event& event);
-	void OnCleanup();
+	void Cleanup();
 	void DrawWindow();
 	void Delay() { SDL_Delay(delay_); }
 	void Clear() { SDL_RenderClear(renderer_); }
 	void Update() { SetBrushColor(renderer_, Black); SDL_RenderPresent(renderer_); }
 
 	std::string name_;
+	Size<int> size_{2266, 1075};
 	int delay_{1000};
 	bool is_running_{true};
 	float scale_{1.0};
@@ -67,7 +66,7 @@ Application::Application(std::string name, int delay)
 	  delay_{delay}
 {}
 
-bool Application::OnInit()
+bool Application::Init()
 {
 	if (SDL_Init(SDL_INIT_VIDEO) != 0)
 	{
@@ -75,7 +74,7 @@ bool Application::OnInit()
 		return false;
 	}
 
-	if (SDL_CreateWindowAndRenderer(width, height,
+	if (SDL_CreateWindowAndRenderer(size_.w, size_.h,
 			SDL_WINDOW_RESIZABLE | SDL_WINDOW_MOUSE_FOCUS,
 			&window_, &renderer_) < 0)
 	{
@@ -83,7 +82,7 @@ bool Application::OnInit()
 		return false;
 	}
 
-	SDL_SetWindowSize(window_, width, height);
+	SDL_SetWindowSize(window_, size_.w, size_.h);
 	SDL_SetWindowTitle(window_, name_.c_str());
 	SDL_ShowWindow(window_);
 
@@ -116,7 +115,7 @@ void Application::OnEvent(SDL_Event& event)
 	}
 }
 
-void Application::OnCleanup()
+void Application::Cleanup()
 {
 	SDL_DestroyRenderer(renderer_);
 	SDL_DestroyWindow(window_);
@@ -146,7 +145,7 @@ void DoInLoop(void* arg)
 
 int Application::Loop()
 {
-	if (OnInit() == false) return -1;
+	if (!Init()) return -1;
 
 #ifdef __EMSCRIPTEN__
 	emscripten_set_main_loop_arg(DoInLoop, this, 0, 1);
@@ -154,13 +153,13 @@ int Application::Loop()
 	while (is_running_) DoInLoop(this);
 #endif
 
-	OnCleanup();
+	Cleanup();
 	return 0;
 }
 
 int Application::Execute()
 {
-	if (OnInit() == false) return -1;
+	if (!Init()) return -1;
 	DoWork();
 	return 0;
 }

@@ -1,9 +1,12 @@
-﻿#include <exception>
+﻿#ifndef _FORWARD_H_
+#define _FORWARD_H_
+
+#include <exception>
 #include <list>
 #include <vector>
 #include <utility>
 
-namespace forward
+namespace core::forward
 {
 template<typename K, typename V>
 class Bucket
@@ -130,4 +133,6 @@ std::ostream& operator<<(std::ostream& out, Hash<K, V, B> const& h)
 	return out;
 }
 
-} // forward
+} // core::forward
+
+#endif // _FORWARD_H_

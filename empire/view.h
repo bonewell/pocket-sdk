@@ -15,9 +15,17 @@ namespace empire
 using Point = bwgui::Point<double>;
 using Line = bwgui::Line<double>;
 using Circle = bwgui::Circle<double>;
+using Triangle = bwgui::Triangle<double>;
 
 using VertexId = std::optional<int>;
 using Grid = std::vector<std::vector<VertexId>>;	
+
+struct Marker
+{
+	Line line;
+	VertexStyle vertex_style{BlackWhiteVertexStyle};
+	EdgeStyle edge_style{BlackWhiteEdgeStyle};
+};
 
 template<typename T, typename U = int>
 struct Edge
@@ -44,7 +52,7 @@ struct Vertex
 				return edges[i];
 			}
 		}
-		return edges.front();
+		return edges.front(); // FIXME - throw exception?
 	}
 };
 
@@ -55,9 +63,8 @@ template<typename T, typename U = int>
 bool is_inside(Point const& p, Vertex<T, U> const& vertex)
 {
 	auto const R2 = vertex.style.R2();
-	auto const dx = p.x - vertex.center.x;
-	auto const dy = p.y - vertex.center.y;
-	return dx * dx + dy * dy <= R2;
+	auto const d = p - vertex.center;
+	return d.x * d.x + d.y * d.y <= R2;
 }
 
 template<typename T, typename U = int>
@@ -147,13 +154,8 @@ GraphView<T, U> CreateView(Graph<T, U> const& graph, Grid const& grid,
 template<typename T, typename U = int>
 std::pair<std::string, Point> GetEdgeLabel(Edge<T, U> const& edge)
 {
-	auto cost = std::to_string(edge.link->cost);
-	Point p;
-	auto dx = (edge.line.e.x - edge.line.b.x) / 4;
-	auto dy = (edge.line.e.y - edge.line.b.y) / 4;
-	p.x = edge.line.b.x + dx;
-	p.y = edge.line.b.y + dy; 
-	return {cost, p};
+	auto const cost = std::to_string(edge.link->cost);
+	return {cost, (edge.line / 4.0).e};
 }
 
 template<typename T, typename U = int>
@@ -179,13 +181,25 @@ void DrawVertex(bwgui::Application& app, Vertex<T, U> const& vertex)
 }
 
 template<typename T, typename U = int>
+void DrawMark(bwgui::Application& app, Marker const& mark)
+{
+	if (mark.edge_style.marker.visible)
+	{
+		auto const center = (mark.line - (mark.vertex_style.radius + mark.edge_style.marker.size)).e;
+		bwgui::FillCircle(app.renderer(), Circle{center, mark.edge_style.marker.size});
+	}
+}
+
+template<typename T, typename U = int>
 void DrawGraph(bwgui::Application& app, GraphView<T, U> const& view, Point const& p = {})
 {
 	for (auto const& v: view.vertexes)
 	{
 		for (auto const& e: v.edges)
 		{
-			DrawEdge<T, U>(app, {e.link, {p + e.line.b, p + e.line.e}, e.style});
+			auto const line = e.line + p;
+			DrawEdge<T, U>(app, {e.link, line, e.style});
+			DrawMark<T, U>(app, {line, v.style, e.style});
 		}
 	}
 	for (auto const& v: view.vertexes)

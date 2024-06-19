@@ -135,9 +135,8 @@ template<typename T, bool debug>
 bool is_inside(Point const& p, Vertex<T, debug> const& vertex)
 {
 	auto const R2 = vertex.style.R2();
-	auto const dx = p.x - vertex.center.x;
-	auto const dy = p.y - vertex.center.y;
-	return dx * dx + dy * dy <= R2;
+	auto const d = p - vertex.center;
+	return d.x * d.x + d.y * d.y <= R2;
 }
 
 template<typename T, typename U = Thread>

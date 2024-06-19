@@ -19,7 +19,7 @@
 namespace bwgui
 {
 	
-#define LOG_ERROR() std::cout << "[ERROR] " << __FILE__ << ':' << __LINE__ \
+#define LOG_ERROR() std::cerr << "[ERROR] " << __FILE__ << ':' << __LINE__ \
 	<< " [" << __FUNCTION__ << "] " << SDL_GetError() << std::endl;
 
 enum class Rotation { CCW = -1, CW = 1 };	
@@ -71,6 +71,52 @@ void FillRectangle(SDL_Renderer* renderer, Rectangle<T> const& rectangle)
 		static_cast<int>(rectangle.s.h)
 	};
 	if (SDL_RenderFillRect(renderer, &rect) != 0) LOG_ERROR();
+}
+
+template<typename T>
+void DrawTriangle(SDL_Renderer* renderer, Triangle<T> const& triangle)
+{
+	std::array<SDL_Point, 4> points;
+	points[0] = {
+		static_cast<int>(triangle.a.x),
+		static_cast<int>(triangle.a.y)};
+	points[1] = {
+		static_cast<int>(triangle.b.x),
+		static_cast<int>(triangle.b.y)};
+	points[2] = {
+		static_cast<int>(triangle.c.x),
+		static_cast<int>(triangle.c.y)};
+	points[3] = {
+		static_cast<int>(triangle.a.x),
+		static_cast<int>(triangle.a.y)};
+	for(auto i = 1; i < points.size(); ++i)
+	{
+		if (SDL_RenderDrawLines(renderer, points.data(), points.size()) != 0) LOG_ERROR();
+	}
+}
+
+template<typename T>
+void FillTriangle(SDL_Renderer* renderer, Triangle<T> const& triangle)
+{
+	std::array<SDL_Point, 4> points;
+	points[0] = {
+		static_cast<int>(triangle.a.x),
+		static_cast<int>(triangle.a.y)};
+	points[1] = {
+		static_cast<int>(triangle.b.x),
+		static_cast<int>(triangle.b.y)};
+	points[2] = {
+		static_cast<int>(triangle.c.x),
+		static_cast<int>(triangle.c.y)};
+	points[3] = {
+		static_cast<int>(triangle.a.x),
+		static_cast<int>(triangle.a.y)};
+	while (points[1].x <= points[2].x)
+	{
+		if (SDL_RenderDrawLines(renderer, points.data(), points.size()) != 0) LOG_ERROR();
+		points[1].x++;
+		points[2].x--;
+	}
 }
 
 template<typename T>
@@ -160,23 +206,22 @@ void DrawText(SDL_Renderer* renderer, std::string const& text, Point<T> const& p
 template<typename T>
 void DrawArc(SDL_Renderer* renderer, Arc<T> const& arc, Rotation rotation)
 {
-	auto dx = arc.e.x - arc.b.x;
-	auto dy = arc.e.y - arc.b.y;
-	auto L = std::sqrt(dx * dx + dy * dy) / 2;
-	auto H = std::abs(arc.height);
-	auto R = (L * L + H * H) / (H * 2);
+	auto const d = arc.e - arc.b;
+	auto const L = std::sqrt(d.x * d.x + d.y * d.y) / 2;
+	auto const H = std::abs(arc.height);
+	auto const R = (L * L + H * H) / (H * 2);
 
-	auto side = static_cast<int>(rotation);
-	auto sina = dy / (2 * L) * side;
-	auto cosa = dx / (2 * L) * side;
+	auto const side = static_cast<int>(rotation);
+	auto const sina = d.y / (2 * L) * side;
+	auto const cosa = d.x / (2 * L) * side;
 	Point<T> p
 	{
-		arc.b.x + dx / 2 - (R - H) * sina,
-		arc.b.y + dy / 2 + (R - H) * cosa
+		arc.b.x + d.x / 2 - (R - H) * sina,
+		arc.b.y + d.y / 2 + (R - H) * cosa
 	};
 
-	Point<T> bz{arc.b.x - p.x, arc.b.y - p.y};
-	Point<T> ez{arc.e.x - p.x, arc.e.y - p.y};
+	auto const bz = arc.b - p;
+	auto const ez = arc.e - p;
 	
 	double A = bz.y - ez.y;
 	double B = ez.x - bz.x;

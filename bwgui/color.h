@@ -8,6 +8,8 @@
 #define _COLOR_H_
 
 #include <SDL.h>
+#include <ostream>
+#include <iomanip>
 
 namespace bwgui
 {
@@ -17,6 +19,15 @@ bool operator==(Color const& lhs, Color const& rhs)
 { return lhs.r == rhs.r && lhs.g == rhs.g && lhs.b == rhs.b && lhs.a == rhs.a; }
 bool operator!=(Color const& lhs, Color const& rhs)
 { return !(lhs == rhs); }
+
+std::ostream& operator<<(std::ostream& out, Color const& color)
+{
+	out << '#' << std::hex;
+	out << std::setw(2) << std::setfill('0') << color.r;
+	out << std::setw(2) << std::setfill('0') << color.g;
+	out << std::setw(2) << std::setfill('0') << color.b;
+	return out;
+}
 
 constexpr Color Black{0, 0, 0, SDL_ALPHA_OPAQUE};
 constexpr Color Pebble{51, 51, 51, SDL_ALPHA_OPAQUE};

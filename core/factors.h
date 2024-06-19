@@ -1,5 +1,11 @@
-﻿#include <vector>
+﻿#ifndef _FACTORS_H_
+#define _FACTORS_H_
+
+#include <vector>
 #include <cmath>
+
+namespace core
+{
 
 using Factors = std::vector<long long>;
 
@@ -28,3 +34,7 @@ Factors get_factors(long long n)
 
 	return factors;
 }
+
+} // namespace core
+
+#endif // _FACTORS_H_

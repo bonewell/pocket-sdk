@@ -1,6 +1,12 @@
-﻿#include <vector>
+﻿#ifndef _POWER_H_
+#define _POWER_H_
+
+#include <vector>
 
 #include <cmath>
+
+namespace core
+{
 
 double power(double v, int p)
 {
@@ -62,3 +68,7 @@ long long power_mod(long long n,
 	}
 	return negative ? 1/res : res;
 }
+
+} // namespace core
+
+#endif // _POWER_H_

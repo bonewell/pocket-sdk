@@ -1,5 +1,11 @@
-﻿#include <random>
+﻿#ifndef _RANDOM_H_
+#define _RANDOM_H_
+
+#include <random>
 #include <vector>
+
+namespace core
+{
 
 template<typename T>
 void random_elements(std::vector<T> & v)
@@ -36,3 +42,7 @@ std::vector<long long> exclusive_random(
 {
 	return exclusive_random(min, max, max - min + 1);
 }
+
+} // namespace core
+
+#endif // _RANDOM_H_

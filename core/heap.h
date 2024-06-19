@@ -1,5 +1,11 @@
-﻿#include <iostream>
+﻿#ifndef _HEAP_H_
+#define _HEAP_H_
+
+#include <iostream>
 #include <array>
+
+namespace core
+{
 
 template<typename T, size_t N>
 using Data = std::array<T, N>;
@@ -114,3 +120,7 @@ std::ostream& operator<<(std::ostream& out, Heap<T, N> const& heap)
 		std::ostream_iterator<typename Data<T, N>::value_type>{out, " "});
 	return out;
 }
+
+} // namespace core
+
+#endif // _HEAP_H_

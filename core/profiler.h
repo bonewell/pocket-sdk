@@ -1,4 +1,10 @@
-﻿#include <ctime>
+﻿#ifndef _PROFILER_H_
+#define _PROFILER_H_
+
+#include <ctime>
+
+namespace core
+{
 
 class Profiler
 {
@@ -17,3 +23,7 @@ public:
 private:
 	std::clock_t started_;
 };
+
+} // namespace core
+
+#endif // _PROFILER_H_

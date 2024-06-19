@@ -1,5 +1,11 @@
-﻿#include <cmath>
+﻿#ifndef _ERATOSTHENES_H_
+#define _ERATOSTHENES_H_
+
+#include <cmath>
 #include <vector>
+
+namespace core
+{
 
 using EratosthenesTable = std::vector<bool>;
 
@@ -24,3 +30,7 @@ EratosthenesTable sift(long long number)
 	}
 	return table;
 }
+
+} // namespace core
+
+#endif // _ERATOSTHENES_H_
