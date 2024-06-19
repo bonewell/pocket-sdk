@@ -11,7 +11,7 @@
 
 constexpr empire::GraphStyle IdleStyle{
 	{empire::BlackWhiteFontStyle, bwgui::Black, bwgui::White, 50.0},
-	{{bwgui::Black, 0.0}, bwgui::Gray},
+	{{false}, {bwgui::Black, 0.0}, bwgui::Gray},
 	{-10.0, -10.0}
 };
 
@@ -97,7 +97,7 @@ void GraphGui<T>::OnClick(bwgui::Point<int> point)
 	if (index == -1) return;
 	anime_.Init(index);
 	view_.reset_styles();
-	random_elements(colors_);
+	core::random_elements(colors_);
 	current_color_ = 0;
 	stage_ = Stage::Start;
 }
@@ -128,8 +128,11 @@ void GraphGui<T>::Update()
 				auto style = IdleStyle;
 				style.vertex.background = colors_[current_color_];
 				anime_.SetStyle(style);
-				graph_.depth_loop(anime_.index(),
-					[this](int from, int to){ anime_.AddStep(from, to); });
+				graph_.traverse(
+					anime_.index(),
+					[this](int from, int to){ anime_.AddStep(from, to); },
+					&empire::depth_traverse<T>);
+				stage_ = Stage::Width;
 				current_color_ = (current_color_ + 1) % colors_.size();
 				stage_ = Stage::Width;
 			}
@@ -140,8 +143,10 @@ void GraphGui<T>::Update()
 				auto style = IdleStyle;
 				style.vertex.background = colors_[current_color_];
 				anime_.SetStyle(style);
-				graph_.width_loop(anime_.index(),
-					[this](int from, int to){ anime_.AddStep(from, to); });
+				graph_.traverse(
+					anime_.index(),
+					[this](int from, int to){ anime_.AddStep(from, to); },
+					&empire::width_traverse<T>);
 				current_color_ = (current_color_ + 1) % colors_.size();
 				stage_ = Stage::Depth;
 			}
