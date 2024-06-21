@@ -7,6 +7,8 @@
 #ifndef _SHAPE_H_
 #define _SHAPE_H_
 
+#include <SDL.h>
+
 #include <vector>
 #include <cmath>
 
