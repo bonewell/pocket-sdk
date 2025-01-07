@@ -27,55 +27,53 @@ struct Marker
 	EdgeStyle edge_style{BlackWhiteEdgeStyle};
 };
 
-template<typename T, typename U = int>
+template<typename T>
 struct Edge
 {          
-	Link<T, U>* link;
+	T* link;
 	Line line;
 	EdgeStyle style{BlackWhiteEdgeStyle};
 };
 
-template<typename T, typename U = int>
+template<typename T>
 struct Vertex
 {
-	Node<T, U>* node;
+	using link_type = typename T::link_type;
+
+	T* node;
 	Point center;
-	std::vector<Edge<T, U>> edges;
+	std::vector<Edge<link_type>> edges;
 	VertexStyle style{BlackWhiteVertexStyle};
 
-	Edge<T, U>& get_edge(int to)
+	Edge<link_type>& get_edge(T const* to)
 	{
-		for (int i = 0; i < edges.size(); ++i)
-		{
-			if (edges[i].link->to->index == to)
-			{
-				return edges[i];
-			}
-		}
-		return edges.front(); // FIXME - throw exception?
+		for (auto& e: edges)
+		{ if (e.link->to == to) return e; }
+		throw "not found";
 	}
 };
 
-template<typename T, typename U = int>
-using Vertexes = std::vector<Vertex<T, U>>;
-
-template<typename T, typename U = int>
-bool is_inside(Point const& p, Vertex<T, U> const& vertex)
+template<typename T>
+bool is_inside(Point const& p, Vertex<T> const& vertex)
 {
 	auto const R2 = vertex.style.R2();
 	auto const d = p - vertex.center;
 	return d.x * d.x + d.y * d.y <= R2;
 }
 
-template<typename T, typename U = int>
+template<typename T>
 struct GraphView
 {
-	Vertexes<T, U> vertexes;
+	using node_type = typename T::node_type;
+	using vertex_type = Vertex<node_type>;
+	using Vertexes = std::unordered_map<node_type*, vertex_type>;
+
+	Vertexes vertexes;
 	GraphStyle style;
 	
 	void reset_styles()
 	{
-		for (auto& v: vertexes)
+		for (auto& [n, v]: vertexes)
 		{
 			v.style.border = style.vertex.border;
 			v.style.background = style.vertex.background;
@@ -84,21 +82,23 @@ struct GraphView
 		}
 	}
 	
-	int locate_vertex(Point p)
+	vertex_type* locate_vertex(Point const& p)
 	{
-		for (auto const& v: vertexes)
+		for (auto& [n, v]: vertexes)
 		{
-			if (is_inside(p, v)) return v.node->index;
+			if (is_inside(p, v)) return &v;
 		}
-		return -1;
+		return nullptr;
 	}
 };
 
-template<typename T, typename U = int>
-void PlaceVertexes(Graph<T, U> const& graph, Grid const& grid, GraphView<T, U>& view)
+template<typename T>
+void PlaceVertexes(T const& graph, Grid const& grid, GraphView<T>& view)
 {
-	view.vertexes.resize(graph.nodes.size());
-	Point p;
+	using node_type = typename T::node_type;
+
+	view.vertexes.reserve(graph.size());
+	Point p{0., 0.};
 	for (auto i = 0; i < grid.size(); ++i)
 	{
 		for (auto j = 0; j < grid[i].size(); ++j)
@@ -106,11 +106,9 @@ void PlaceVertexes(Graph<T, U> const& graph, Grid const& grid, GraphView<T, U>& 
 			if (grid[i][j])
 			{
 				auto index = *grid[i][j];
-				auto node = graph.nodes[index].get();
-				auto& v = view.vertexes[index];
-				v.node = node;
-				v.center = p;
-				v.style = view.style.vertex;
+				auto node = graph[index];
+				auto [v, ok] = view.vertexes.emplace(node, Vertex<node_type>{node, p});
+				if (ok) v->second.style = view.style.vertex;
 			}
 			p.x += view.style.dx();
 		}
@@ -119,58 +117,69 @@ void PlaceVertexes(Graph<T, U> const& graph, Grid const& grid, GraphView<T, U>& 
 	}
 }
 
-template<typename T, typename U = int>
-void CreateEdges(GraphView<T, U>& view)
+template<typename T>
+void CreateEdges(GraphView<T>& view)
 {
-	auto find_vertex = [vs = std::as_const(view.vertexes)](Node<T, U> const * const n)
-	{
-		auto found = std::find_if(std::cbegin(vs), std::cend(vs),
-			[n](auto const& v) { return v.node == n; });
-		return found != std::end(vs) ? &*found : nullptr;
-	};
+	using link_type = typename T::link_type;
 
-	for (auto& v: view.vertexes)
+	for (auto& [n, from]: view.vertexes)
 	{
-		std::vector<Edge<T, U>> edges;
-		for (auto& l: v.node->links)
+		std::vector<Edge<link_type>> edges;
+		for (auto& l: n->links)
 		{
-			Line line{v.center, find_vertex(l.to)->center};
-			v.edges.push_back(Edge<T, U>{&l, line, view.style.edge});
+			auto const& to = view.vertexes[l.to];
+			Line line{from.center, to.center};
+			from.edges.push_back(Edge<link_type>{&l, line, view.style.edge});
 		}
 	}
 };
 
-template<typename T, typename U = int>
-GraphView<T, U> CreateView(Graph<T, U> const& graph, Grid const& grid,
+template<typename T>
+GraphView<T> CreateView(T const& graph, Grid const& grid,
 	GraphStyle style = BlackWhiteGraphStyle)
 {
-	GraphView<T, U> view;
+	GraphView<T> view;
 	view.style = std::move(style);
 	PlaceVertexes(graph, grid, view);
 	CreateEdges(view);
 	return view;
 }
 
-template<typename T, typename U = int>
-std::pair<std::string, Point> GetEdgeLabel(Edge<T, U> const& edge)
+template<typename T>
+std::pair<std::string, Point> GetEdgeLabel(Edge<T> const& edge)
 {
-	auto const cost = std::to_string(edge.link->cost);
-	return {cost, (edge.line / 4.0).e};
+	using cost_type = typename T::cost_type;
+
+	std::string cost;
+	if constexpr (std::is_arithmetic_v<cost_type>)
+	{
+		cost = std::to_string(edge.link->cost);
+	}
+	else
+	{
+		cost = edge.link->cost;
+	}
+	return {cost, (edge.line / 3.0).e};
 }
 
-template<typename T, typename U = int>
-void DrawEdge(bwgui::Application& app, Edge<T, U> const& edge)
-{	
-	auto [label, position] = GetEdgeLabel(edge);
-	bwgui::SetBrushColor(app.renderer(), edge.style.label.color);
-	bwgui::DrawText(app.renderer(), label, position, edge.style.label.size);
+template<typename T>
+void DrawEdge(bwgui::Application& app, Edge<T> const& edge)
+{
+	using cost_type = typename T::cost_type;
+
+	if constexpr (!std::is_void_v<cost_type>)
+	{
+		auto [label, position] = GetEdgeLabel(edge);
+		bwgui::SetBrushColor(app.renderer(), edge.style.label.color);
+		bwgui::DrawText(app.renderer(), label, position, edge.style.label.size);
+	}
 
 	bwgui::SetBrushColor(app.renderer(), edge.style.color);
 	bwgui::DrawLine(app.renderer(), edge.line);
 }
 
-template<typename T, typename U = int>
-void DrawVertex(bwgui::Application& app, Vertex<T, U> const& vertex)
+template<typename T>
+void DrawVertex(bwgui::Application& app, Vertex<T> const& vertex)
 {
 	bwgui::SetBrushColor(app.renderer(), vertex.style.background);
 	bwgui::FillCircle(app.renderer(), Circle{vertex.center, vertex.style.radius});
@@ -180,7 +189,6 @@ void DrawVertex(bwgui::Application& app, Vertex<T, U> const& vertex)
 	bwgui::DrawChar(app.renderer(), vertex.node->value, vertex.center, vertex.style.label.size);
 }
 
-template<typename T, typename U = int>
 void DrawMark(bwgui::Application& app, Marker const& mark)
 {
 	if (mark.edge_style.marker.visible)
@@ -190,21 +198,24 @@ void DrawMark(bwgui::Application& app, Marker const& mark)
 	}
 }
 
-template<typename T, typename U = int>
-void DrawGraph(bwgui::Application& app, GraphView<T, U> const& view, Point const& p = {})
+template<typename T>
+void DrawGraph(bwgui::Application& app, GraphView<T> const& view, Point const& p = {})
 {
-	for (auto const& v: view.vertexes)
+	using node_type = typename T::node_type;
+	using link_type = typename T::link_type;
+
+	for (auto const& [n, v]: view.vertexes)
 	{
 		for (auto const& e: v.edges)
 		{
 			auto const line = e.line + p;
-			DrawEdge<T, U>(app, {e.link, line, e.style});
-			DrawMark<T, U>(app, {line, v.style, e.style});
+			DrawEdge<link_type>(app, {e.link, line, e.style});
+			DrawMark(app, {line, v.style, e.style});
 		}
 	}
-	for (auto const& v: view.vertexes)
+	for (auto const& [n, v]: view.vertexes)
 	{
-		DrawVertex<T, U>(app, {v.node, p + v.center, {}, v.style});
+		DrawVertex<node_type>(app, {v.node, p + v.center, {}, v.style});
 	}
 }
 

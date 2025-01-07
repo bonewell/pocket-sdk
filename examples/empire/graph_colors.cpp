@@ -1,52 +1,28 @@
-﻿#include "bwgui/action.h"
-#include "bwgui/application.h"
+﻿#include "apps/graph_gui.h"
 
 #include "empire/colorizer.h"
 #include "empire/graph.h"
-#include "empire/view.h"
 
 static const empire::GraphStyle NoMarker{
 	empire::BlackWhiteVertexStyle,
 	{{false}, {bwgui::Black, 0.0}, bwgui::Gray},
 	empire::DefaultPadding};
 
-template<typename T, typename U>
-class GraphGui: public bwgui::Application
+class App: public GraphGui<empire::Graph<char>>
 {
 public:
-	explicit GraphGui(empire::Graph<T, U> graph, empire::Grid const& grid);
-
-	void OnClick(bwgui::Point<int> point) override {}
-	void OnLoop() override {}
-	void OnRender() override;
-	
-private:
-	empire::Graph<T,U> graph_;
-	empire::GraphView<T,U> view_;
-	empire::Point position_{75, 75};
+	App(graph_type graph, empire::Grid const& grid)
+		: GraphGui(std::move(graph), grid, NoMarker)
+	{
+		empire::Colorizer{view()}.paint_with({
+			bwgui::Red,
+			bwgui::Blue,
+			bwgui::Green,
+			bwgui::Orange,
+			bwgui::BlueViolet,
+			bwgui::DeepSkyBlue});
+	}
 };
-
-template<typename T, typename U>
-GraphGui<T, U>::GraphGui(empire::Graph<T, U> graph, empire::Grid const& grid)
-	: Application("graph_gui"),
-	  graph_{std::move(graph)}
-{
-	view_ = empire::CreateView<T, U>(graph_, grid, NoMarker);
-
-	empire::Colorizer<T, U>{view_}.paint_with({
-		bwgui::Red,
-		bwgui::Blue,
-		bwgui::Green,
-		bwgui::Orange,
-		bwgui::BlueViolet,
-		bwgui::DeepSkyBlue});
-}
-
-template<typename T, typename U>
-void GraphGui<T, U>::OnRender()
-{
-	empire::DrawGraph(*this, view_, {75, 75});
-}
 
 int main()
 {
@@ -58,7 +34,7 @@ int main()
 		'C', 'D', 'E', 'F'
 	};
 
-	std::vector<empire::MetaLink<bool>> links
+	std::vector<empire::MetaLink<>> links
 	{
 		{0, 1}, {0, 2}, {0, 3},
 		{1, 0}, {1, 2}, {1, 8},
@@ -88,7 +64,7 @@ int main()
 		{ 15, 12, 11, 14, N, N}
 	};
 
-	GraphGui app{std::move(graph), grid};
+	App app{std::move(graph), grid};
 
 	return app.Execute();
 }

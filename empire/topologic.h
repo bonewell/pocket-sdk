@@ -6,34 +6,38 @@
 namespace empire
 {
 
-template<typename T, typename U = int>
-std::vector<int> topologic_sort(Graph<T, U> const& graph)
+template<typename T>
+std::vector<typename T::node_type const*> topologic_sort(T const& graph)
 {
-	std::vector<int> dependencies(graph.nodes.size(), 0);
-	for (auto const& n: graph.nodes)
-		for (auto const& l: n->links)
-			++dependencies[l.to->index];
+	using node_type = typename T::node_type;
 
-	std::queue<Node<T, U> const * const> ready;
-	for (auto const& n: graph.nodes)
-		if (dependencies[n->index] == 0) ready.push(n.get());
+	std::unordered_map<node_type const*, int> dependencies;
+	dependencies.reserve(graph.size());
+
+	for (auto const& n: graph)
+		for (auto const& l: n->links)
+			++dependencies[l.to];
+
+	std::queue<node_type const*> ready;
+	for (auto const& n: graph)
+		if (dependencies[n.get()] == 0) ready.push(n.get());
 	 
-	std::vector<int> ordering;
+	std::vector<node_type const*> ordering;
 	while (!ready.empty())
 	{
 		auto n = ready.front();
 		ready.pop();
-		ordering.push_back(n->index);
+		ordering.push_back(n);
 		for (auto const& l: n->links)
 		{
-			--dependencies[l.to->index];
-			if (dependencies[l.to->index] == 0) ready.push(l.to);
+			--dependencies[l.to];
+			if (dependencies[l.to] == 0) ready.push(l.to);
 		}
 	}
 	if (std::any_of(
 		std::begin(dependencies),
 		std::end(dependencies),
-		[](auto c) { return c > 0; }))
+		[](auto const& p) { return p.second > 0; }))
 	{
 		return {};
 	}

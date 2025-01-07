@@ -7,8 +7,6 @@
 #ifndef _SHAPE_H_
 #define _SHAPE_H_
 
-#include <SDL.h>
-
 #include <vector>
 #include <cmath>
 
@@ -17,7 +15,8 @@ namespace bwgui
 	template <typename T>
 	struct Point
 	{
-		T x, y;
+		T x{};
+		T y{};
 
 		operator SDL_Point() const
 		{

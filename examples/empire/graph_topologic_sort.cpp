@@ -1,58 +1,36 @@
-﻿#include "bwgui/action.h"
-#include "bwgui/application.h"
+﻿#include "apps/graph_gui.h"
 
-#include "empire/graph.h"
 #include "empire/topologic.h"
-#include "empire/view.h"
+#include "empire/graph.h"
 
 static const empire::GraphStyle NoWeight{
 	empire::BlackWhiteVertexStyle,
 	{empire::BlackWhiteMarkerStyle, {bwgui::Black, 0.0}, bwgui::Gray},
 	empire::DefaultPadding};
 
-template<typename T, typename U>
-class GraphGui: public bwgui::Application
+class App: public GraphGui<empire::Graph<char, bool>>
 {
 public:
-	explicit GraphGui(empire::Graph<T, U> graph, empire::Grid const& grid);
+	using GraphGui<empire::Graph<char, bool>>::GraphGui;
 
-	void OnClick(bwgui::Point<int> point) override {}
 	void OnLoop() override;
-	void OnRender() override;
 	
 private:
-	empire::Graph<T,U> graph_;
-	empire::GraphView<T,U> view_;
-	empire::Point position_{75, 75};
-	std::vector<int> path_;
-	int next_{-1};
+	vertex_type* from_{nullptr};
+
+	using node_type = typename graph_type::node_type;
+	std::vector<node_type const*> path_{empire::topologic_sort(graph())};
+	int next_{0};
 };
 
-template<typename T, typename U>
-GraphGui<T, U>::GraphGui(empire::Graph<T, U> graph, empire::Grid const& grid)
-	: Application("graph_gui", 1000),
-	  graph_{std::move(graph)}
+void App::OnLoop()
 {
-	view_ = empire::CreateView<T, U>(graph_, grid, NoWeight);
-	path_ = empire::topologic_sort(graph_);
-	next_ = 0;
-}
-
-template<typename T, typename U>
-void GraphGui<T, U>::OnLoop()
-{
-	if (next_ == -1 || next_ >= path_.size()) return;
-
-	auto from = path_[next_];
-	view_.vertexes[from].style.border = bwgui::Yellow;
-	view_.vertexes[from].style.background = bwgui::Green;
-	++next_;
-}
-
-template<typename T, typename U>
-void GraphGui<T, U>::OnRender()
-{
-	empire::DrawGraph(*this, view_, {75, 75});
+	if (0 <= next_ && next_ < path_.size())
+	{
+		auto from = path_[next_++];
+		vertex(from).style.border = bwgui::Yellow;
+		vertex(from).style.background = bwgui::Green;
+	}
 }
 
 int main()
@@ -109,7 +87,7 @@ int main()
 		{ N, 15, 12, 11, 14}
 	};
 
-	GraphGui app{std::move(graph), grid};
+	App app{std::move(graph), grid};
 
 	return app.Loop();
 }

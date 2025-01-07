@@ -1,76 +1,70 @@
-﻿#include "bwgui/action.h"
-#include "bwgui/application.h"
+﻿#include "apps/graph_gui.h"
 
 #include "empire/graph.h"
-#include "empire/view.h"
 
-template<typename T>
-class GraphGui: public bwgui::Application
+class App: public GraphGui<empire::Graph<char>>
 {
 public:
-	explicit GraphGui(empire::Graph<T> graph, empire::Grid const& grid);
+	using GraphGui<empire::Graph<char>>::GraphGui;
 
-	void OnClick(bwgui::Point<int> point) override;
+	void OnTap(vertex_type& vertex) override;
 	void OnLoop() override;
-	void OnRender() override;
 	
 private:
-	empire::Graph<T> graph_;
-	empire::GraphView<T> view_;
-	empire::Point position_{75, 75};
-	std::optional<int> from_;
-	std::vector<int> path_;
+	vertex_type* from_{nullptr};
+
+	using link_type = typename graph_type::link_type;
+	std::vector<link_type*> path_;
 	int next_{-1};
 };
 
-template<typename T>
-GraphGui<T>::GraphGui(empire::Graph<T> graph, empire::Grid const& grid)
-	: Application("graph_gui", 300),
-	  graph_{std::move(graph)}
+void App::OnTap(vertex_type& vertex)
 {
-	view_ = empire::CreateView<T>(graph_, grid);
-}
-
-template<typename T>
-void GraphGui<T>::OnClick(bwgui::Point<int> point)
-{
-	int index = view_.locate_vertex({point.x - position_.x, point.y - position_.y});
-	if (index == -1) return;
-	if (!from_) 
+	if (!from_ || from_ == &vertex) 
 	{
-		from_ = index;
+		from_ = &vertex;
+		reset();
 		return;
 	}
 	
-	path_ = graph_.find_path(*from_, index);
-	view_.reset_styles();
+	auto from = from_->node;
+	auto to = vertex.node;
+	path_ = graph().find_path(from, to,
+//		empire::Traverse::Width
+//		empire::Traverse::Depth
+//		empire::Traverse::Mark
+		empire::Traverse::Remark
+	);
 	next_ = 0;
-	from_ = std::nullopt;
+	from_ = nullptr;
 }
 
-template<typename T>
-void GraphGui<T>::OnLoop()
+void App::OnLoop()
 {
-	if (next_ >= path_.size()) return;
-
-	auto from = path_[next_];
-	view_.vertexes[from].style.border = bwgui::Yellow;
-	view_.vertexes[from].style.background = bwgui::Green;
+	if (from_)
+	{
+		from_->style.background = bwgui::Gray;	
+	}
 	
-	if (next_ >= path_.size() - 1) return;
-	auto to = path_[next_ + 1];
-	auto& edge_from_to = view_.vertexes[from].get_edge(to);
-	edge_from_to.style.color = bwgui::Yellow;
-	auto& edge_to_from = view_.vertexes[to].get_edge(from);
-	edge_to_from.style.color = bwgui::Yellow;
+	if (path_.empty()) return;
 
-	if (next_ + 1 < path_.size()) ++next_;
-}
+	if (0 <= next_ && next_ < path_.size())
+	{
+		const auto& link = path_[next_++];
 
-template<typename T>
-void GraphGui<T>::OnRender()
-{
-	empire::DrawGraph(*this, view_, {75, 75});
+		vertex(link->from).style.border = bwgui::Yellow;
+		vertex(link->from).style.background = bwgui::Green;
+
+		vertex(link->from).get_edge(link->to).style.color = bwgui::Yellow;
+		vertex(link->to).get_edge(link->from).style.color = bwgui::Yellow;
+	}
+	if (next_ == path_.size())
+	{
+		const auto& link = path_.back();
+		vertex(link->to).style.border = bwgui::Yellow;
+		vertex(link->to).style.background = bwgui::Green;
+		next_++;
+	}
 }
 
 int main()
@@ -128,7 +122,7 @@ int main()
 		{15, 16, 17, 18, 19}
 	};
 
-	GraphGui app{std::move(graph), grid};
+	App app{std::move(graph), grid};
 
 	return app.Loop();
 }

@@ -37,7 +37,7 @@ struct MarkerStyle
 	bool visible;
 	double size;
 };
-constexpr MarkerStyle BlackWhiteMarkerStyle{true, 10.0};
+constexpr MarkerStyle BlackWhiteMarkerStyle{true, 10.0}; 
 
 struct EdgeStyle
 {
@@ -45,7 +45,7 @@ struct EdgeStyle
 	FontStyle label;
 	bwgui::Color color;
 };
-constexpr EdgeStyle BlackWhiteEdgeStyle{BlackWhiteMarkerStyle,{bwgui::White, 3.0}, bwgui::Gray};
+constexpr EdgeStyle BlackWhiteEdgeStyle{BlackWhiteMarkerStyle, {bwgui::White, 3.0}, bwgui::Gray};
 
 struct GraphStyle
 {

@@ -19,6 +19,8 @@
 
 namespace bwgui
 {
+	
+struct MouseCorrection { float x, y; };
 
 class Application
 {
@@ -29,7 +31,8 @@ public:
 	void Resize(Size<int> const& size) { size_ = size; }
 	SDL_Renderer* renderer() const { return renderer_; }
 	
-	void SetScale(double scale) { scale_ = scale; }
+	void SetScale(float scale) { scale_ = scale; }
+	void SetMouseCorrection(MouseCorrection correction) { correction_ = correction; }
 
 	int Execute();
 	int Loop();
@@ -56,7 +59,8 @@ private:
 	Size<int> size_{2266, 1075};
 	int delay_{1000};
 	bool is_running_{true};
-	float scale_{1.0};
+	float scale_{1};
+	MouseCorrection correction_{1, 1};
 	SDL_Window* window_{nullptr};
 	SDL_Renderer* renderer_{nullptr};
 };
@@ -64,7 +68,11 @@ private:
 Application::Application(std::string name, int delay)
 	: name_{std::move(name)},
 	  delay_{delay}
-{}
+{
+#ifdef __APPLE__
+	SetMouseCorrection({0.9485, 1.04});
+#endif
+}
 
 bool Application::Init()
 {
@@ -105,12 +113,17 @@ void Application::OnEvent(SDL_Event& event)
 		case SDL_KEYDOWN:
 			switch (event.key.keysym.sym)
 			{
-				case SDLK_h: scale_ -= 0.1; break;
-				case SDLK_j: scale_ += 0.1; break;
+				case SDLK_h: scale_ -= 0.05; break;
+				case SDLK_j: scale_ += 0.05; break;
+				case SDLK_r: scale_ = 1.; break;
 			}; break;
 		case SDL_MOUSEBUTTONUP:
 			if (event.button.clicks == 1)
-				OnClick({event.button.x, event.button.y});
+			{
+				const auto x = static_cast<int>(event.button.x * correction_.x / scale_);
+				const auto y = static_cast<int>(event.button.y * correction_.y / scale_);
+				OnClick({x, y});
+			}
 			break;
 	}
 }

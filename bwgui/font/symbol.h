@@ -58,6 +58,17 @@ Char RightArrow
 	0b01000
 };
 
+Char Slash
+{
+	0b00001,
+	0b00010,
+	0b00010,
+	0b00100,
+	0b01000,
+	0b01000,
+	0b10000
+};
+
 } // namespace bwgui::font
 
 #endif // _SYMBOL_H_

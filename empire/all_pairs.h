@@ -10,60 +10,81 @@ namespace empire
 template<typename T>
 T inf = std::numeric_limits<T>::max();
 
-template<typename T, typename U = int>
+template<typename T>
 class AllPairs
 {
 public:
-	explicit AllPairs(Graph<T,U> const& graph);
-	std::vector<int> find_path(int from, int to) const;
+	using node_type = typename T::node_type;
+	using cost_type = typename T::link_type::cost_type;
+
+	explicit AllPairs(T const& graph): graph_{graph}
+	{
+		init();
+		precalc();
+	}
+
+	std::vector<node_type const*> find_path(node_type const* from, node_type const* to) const
+	{
+		if (distance_.at(from).at(to) == inf<cost_type>) return {};
+		auto const via = via_.at(from).at(to);
+		if (via == to) return {from, to};
+		auto head = find_path(from, via);
+		auto tail = find_path(via, to);
+		head.insert(std::end(head), std::next(std::begin(tail)), std::end(tail));
+		return head;
+	}
 
 private:
 	void init();
 	void precalc();
 
-	Nodes<T,U> const& nodes;
+	T const& graph_;
 
-	std::vector<std::vector<U>> distance_;
-	std::vector<std::vector<int>> via_;
+	using Distance = std::unordered_map<node_type const*,
+		std::unordered_map<node_type const*, cost_type>>;
+	Distance distance_;
+
+	using Via = std::unordered_map<node_type const*,
+		std::unordered_map<node_type const*, node_type const*>>;
+	Via via_;
 };
 
-template<typename T, typename U>
-AllPairs<T, U>::AllPairs(Graph<T,U> const& graph)
-	: nodes{graph.nodes},
-	  distance_(nodes.size(), std::vector<U>(nodes.size(), inf<U>)),
-	  via_(nodes.size(), std::vector<int>(nodes.size(), -1))
+template<typename T>
+void AllPairs<T>::init()
 {
-	init();
-	precalc();
-}
-
-template<typename T, typename U>
-void AllPairs<T, U>::init()
-{
-	for(auto i = 0; i < nodes.size(); ++i)
+	for(auto const& nfrom: graph_)
 	{
-		distance_[i][i] = U{};
-		via_[i][i] = i;
-		for (auto l: nodes[i]->links)
+		auto from = nfrom.get();
+		for (auto const& nto: graph_)
 		{
-			const auto j = l.to->index;
-			distance_[i][j] = l.cost;
-			via_[i][j] = j;
+			auto to = nto.get();
+			distance_[from][to] = inf<cost_type>;
+		}
+		distance_[from][from] = cost_type{};
+		via_[from][from] = from;
+		for (auto l: from->links)
+		{
+			const auto to = l.to;
+			distance_[from][to] = l.cost;
+			via_[from][to] = to;
 		}
 	}
 }
 
-template<typename T, typename U>
-void AllPairs<T, U>::precalc()
+template<typename T>
+void AllPairs<T>::precalc()
 {
-	for(auto via = 0; via < nodes.size(); ++via)
+	for(auto const& nvia: graph_)
 	{
-		for (auto from = 0; from < nodes.size(); ++from)
+		auto via = nvia.get();
+		for (auto const& nfrom: graph_)
 		{
-			for (auto to = 0; to < nodes.size(); ++to)
+			auto from = nfrom.get();
+			for (auto const& nto: graph_)
 			{
-				if (distance_[from][via] == inf<U>) continue;
-				if (distance_[via][to] == inf<U>) continue;
+				auto to = nto.get();
+				if (distance_[from][via] == inf<cost_type>) continue;
+				if (distance_[via][to] == inf<cost_type>) continue;
 				auto const distance = distance_[from][via] + distance_[via][to];
 				if (distance < distance_[from][to])
 				{
@@ -73,18 +94,6 @@ void AllPairs<T, U>::precalc()
 			}
 		}
 	}
-}
-
-template<typename T, typename U>
-std::vector<int> AllPairs<T, U>::find_path(int from, int to) const
-{
-	if (distance_[from][to] == inf<U>) return {};
-	auto const via = via_[from][to];
-	if (via == to) return {from, to};
-	auto head = find_path(from, via);
-	auto tail = find_path(via, to);
-	head.insert(std::end(head), std::next(std::begin(tail)), std::end(tail));
-	return head;
 }
 
 } // namespace empire

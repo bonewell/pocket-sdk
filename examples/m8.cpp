@@ -1,13 +1,8 @@
-﻿#include "bwgui/action.h"
-#include "bwgui/application.h"
-
+﻿#include "apps/graph_gui.h"
+#include "empire/graph.h"
 #include "core/random.h"
 
-#include "empire/graph.h"
-#include "empire/view.h"
-
 #include <vector>
-
 
 constexpr empire::GraphStyle IdleStyle{
 	{empire::BlackWhiteFontStyle, bwgui::Black, bwgui::White, 50.0},
@@ -15,71 +10,67 @@ constexpr empire::GraphStyle IdleStyle{
 	{-10.0, -10.0}
 };
 
+template<typename T>
 class Anime
 {
 public:
-	void Init(int index) { next_ = 0; index_ = index; steps_.clear(); }
-	void AddStep(int from, int to) { steps_.emplace_back(from, to); }
+	void Init(T const* node) { next_ = 0; node_ = node; steps_.clear(); }
+	void AddStep(T const* from, T const* to)
+	{ steps_.emplace_back(from, to); }
 	void SetStyle(empire::GraphStyle const& style) { style_ = style; }
-	template<typename T, typename U = int>
-	void Update(empire::GraphView<T, U>& view);
+	template<typename A> void Update(A& app);
 	bool IsFinished() const { return next_ >= steps_.size(); }
-	int index() const { return index_; }
-private:
-	std::vector<std::pair<int, int>> steps_;
+	T const* node() const { return node_; }
+
+private:	
+	std::vector<std::pair<T const*, T const*>> steps_;
+
 	empire::GraphStyle style_{empire::BlackWhiteGraphStyle};
 	int next_{0};
-	int index_{0};
+	T const* node_{nullptr};
 };
 
-template<typename T, typename U>
-void Anime::Update(empire::GraphView<T, U>& view)
+template<typename T>
+template<typename A>
+void Anime<T>::Update(A& app)
 {
 	if (IsFinished()) return;
-	auto [from, to] = steps_[next_];
-	view.vertexes[to].style.border = style_.vertex.border;
-	view.vertexes[to].style.background = style_.vertex.background;
-	if (from > -1)
-	{
-		auto& edge_from_to = view.vertexes[from].get_edge(to);
-		edge_from_to.style.color = style_.edge.color;
-		auto& edge_to_from = view.vertexes[to].get_edge(from);
-		edge_to_from.style.color = style_.edge.color;
-	}
-	index_ = to;
-	++next_;
+	auto [from, to] = steps_[next_++];
+
+	app.vertex(from).style.border = style_.vertex.border;
+	app.vertex(from).style.background = style_.vertex.background;
+
+	app.vertex(to).style.border = style_.vertex.border;
+	app.vertex(to).style.background = style_.vertex.background;
+
+	app.vertex(from).get_edge(to).style.color = style_.edge.color;
+	app.vertex(to).get_edge(from).style.color = style_.edge.color;
+
+	node_ = to;
 }
 
 enum class Stage{ Idle, Start, Depth, Width };
 
-template<typename T>
-class GraphGui: public bwgui::Application
+class App: public GraphGui<empire::Graph<char>>
 {
 public:
-	explicit GraphGui(empire::Graph<T> graph, empire::Grid const& grid);
+	App(graph_type graph, empire::Grid const& grid);
 
-	void OnClick(bwgui::Point<int> point) override;
+	void OnTap(vertex_type& vertex) override;
 	void OnLoop() override;
-	void OnRender() override;
 	
 private:
 	void Update();
 
-	empire::Graph<T> graph_;
-	empire::GraphView<T> view_;
-	empire::Point position_{250, 100};
-	Anime anime_;
+	Anime<typename graph_type::node_type> anime_;
 	Stage stage_{Stage::Idle};
 	std::vector<bwgui::Color> colors_;
 	int current_color_{0};
 };
 
-template<typename T>
-GraphGui<T>::GraphGui(empire::Graph<T> graph, empire::Grid const& grid)
-	: Application("graph_gui", 50),
-	  graph_{std::move(graph)}
+App::App(graph_type graph, empire::Grid const& grid)
+	: GraphGui(std::move(graph), grid, IdleStyle, 50)
 {
-	view_ = empire::CreateView<T>(graph_, grid, IdleStyle);
 	anime_.SetStyle(IdleStyle);
 	colors_ = {
 		bwgui::Silver, bwgui::Red, bwgui::Crimson, bwgui::Lime,
@@ -90,33 +81,22 @@ GraphGui<T>::GraphGui(empire::Graph<T> graph, empire::Grid const& grid)
 	};
 }
 
-template<typename T>
-void GraphGui<T>::OnClick(bwgui::Point<int> point)
-{
-	int index = view_.locate_vertex({point.x - position_.x, point.y - position_.y});
-	if (index == -1) return;
-	anime_.Init(index);
-	view_.reset_styles();
+void App::OnTap(vertex_type& vertex)
+{	
+	anime_.Init(vertex.node);
+	reset();
 	core::random_elements(colors_);
 	current_color_ = 0;
 	stage_ = Stage::Start;
 }
 
-template<typename T>
-void GraphGui<T>::OnLoop()
+void App::OnLoop()
 {
 	Update();	
-	anime_.Update(view_);
+	anime_.Update(*this);
 }
 
-template<typename T>
-void GraphGui<T>::OnRender()
-{
-	empire::DrawGraph(*this, view_, position_);
-}
-
-template<typename T>
-void GraphGui<T>::Update()
+void App::Update()
 {
 	switch (stage_)
 	{
@@ -128,11 +108,10 @@ void GraphGui<T>::Update()
 				auto style = IdleStyle;
 				style.vertex.background = colors_[current_color_];
 				anime_.SetStyle(style);
-				graph_.traverse(
-					anime_.index(),
-					[this](int from, int to){ anime_.AddStep(from, to); },
-					&empire::depth_traverse<T>);
-				stage_ = Stage::Width;
+				graph().traverse(
+					anime_.node(),
+					[this](auto const& l){ anime_.AddStep(l->from, l->to); },
+					empire::Traverse::Depth);
 				current_color_ = (current_color_ + 1) % colors_.size();
 				stage_ = Stage::Width;
 			}
@@ -143,10 +122,10 @@ void GraphGui<T>::Update()
 				auto style = IdleStyle;
 				style.vertex.background = colors_[current_color_];
 				anime_.SetStyle(style);
-				graph_.traverse(
-					anime_.index(),
-					[this](int from, int to){ anime_.AddStep(from, to); },
-					&empire::width_traverse<T>);
+				graph().traverse(
+					anime_.node(),
+					[this](auto const& l){ anime_.AddStep(l->from, l->to); },
+					empire::Traverse::Width);
 				current_color_ = (current_color_ + 1) % colors_.size();
 				stage_ = Stage::Depth;
 			}
@@ -190,7 +169,7 @@ int main()
 		{  N,  N, 14, 13,  12, N, N }
 	};
 
-	GraphGui app{std::move(graph), grid};
+	App app{std::move(graph), grid};
 
 	return app.Loop();
 }

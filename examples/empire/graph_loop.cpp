@@ -1,6 +1,5 @@
 ﻿#include "apps/graph_gui.h"
 
-#include "empire/all_pairs.h"
 #include "empire/graph.h"
 
 class App: public GraphGui<empire::Graph<char>>
@@ -12,58 +11,40 @@ public:
 	void OnLoop() override;
 	
 private:
-	empire::AllPairs<graph_type> all_pairs_{graph()};
 	vertex_type* from_{nullptr};
 
 	using node_type = typename graph_type::node_type;
-	std::vector<node_type const*> path_;
+	std::vector<std::pair<node_type const*, node_type const*>> steps_;
 	int next_{-1};
 };
 
 void App::OnTap(vertex_type& vertex)
 {
-	if (!from_ || from_ == &vertex) 
-	{
-		from_ = &vertex;
-		reset();
-		return;
-	}
-
-	auto from = from_->node;
-	auto to = vertex.node;
-	path_ = all_pairs_.find_path(from, to);
+	steps_.clear();
+	graph().traverse(vertex.node, [this](auto l){ steps_.emplace_back(l->from, l->to); },
+//		empire::Traverse::Width
+//		empire::Traverse::Depth
+//		empire::Traverse::Mark
+		empire::Traverse::Remark
+	);
+	reset();
 	next_ = 0;
-	from_ = nullptr;
 }
 
 void App::OnLoop()
 {
-	if (from_)
-	{
-		from_->style.background = bwgui::Gray;	
-	}
+	if (next_ >= steps_.size()) return;
 
-	if (path_.empty()) return;
-
-	if (0 <= next_ && next_ < path_.size())
-	{
-		const auto from = path_[next_++];
-		vertex(from).style.border = bwgui::Yellow;
-		vertex(from).style.background = bwgui::Green;
-
-		if (next_ > path_.size() - 1) return;		
-		const auto to = path_[next_];
-		vertex(from).get_edge(to).style.color = bwgui::Yellow;
-		vertex(to).get_edge(from).style.color = bwgui::Yellow;
-	}
+	auto [from, to] = steps_[next_++];
 	
-	if (next_ == path_.size())
-	{
-		const auto to = path_.back();
-		vertex(to).style.border = bwgui::Yellow;
-		vertex(to).style.background = bwgui::Green;
-		next_++;
-	}
+	vertex(from).style.border = bwgui::Yellow;
+	vertex(from).style.background = bwgui::Green;
+
+	vertex(to).style.border = bwgui::Yellow;
+	vertex(to).style.background = bwgui::Green;
+	
+	vertex(from).get_edge(to).style.color = bwgui::Yellow;
+	vertex(to).get_edge(from).style.color = bwgui::Yellow;
 }
 
 int main()
@@ -79,7 +60,7 @@ int main()
 	std::vector<empire::MetaLink<>> links
 	{
 		{0, 1, 83}, {1, 0, 83},
-		{0, 5, 40}, {5, 0, 40},
+		{0, 5, 80}, {5, 0, 80},
 		{0, 6, 114}, {6, 0, 114},
 		{1, 2, 91}, {2, 1, 91},
 		{1, 6, 76}, {6, 1, 76},
@@ -89,7 +70,7 @@ int main()
 		{3, 8, 83}, {8, 3, 83},
 		{4, 9, 84}, {9, 4, 84},
 
-		{5, 6, 44}, {6, 5, 44},
+		{5, 6, 84}, {6, 5, 84},
 		{5, 10, 80}, {10, 5, 80},
 		{6, 7, 96}, {7, 6, 96},
 		{6, 11, 79}, {11, 6, 79},
@@ -113,7 +94,7 @@ int main()
 		{18, 19, 97}, {19, 18, 97}
 	};
 
-	auto graph = empire::make_graph(values, links);
+	auto graph = empire::make_graph<char, int>(values, links, std::greater<>{});
 	empire::Grid grid{
 		{ 0,  1,  2,  3,  4},
 		{ 5,  6,  7,  8,  9},

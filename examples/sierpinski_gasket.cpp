@@ -96,5 +96,5 @@ int main()
 {
 	SierpinskiGasket app{4};
 
-	return app.Execute();
+	return app.Loop();
 }
