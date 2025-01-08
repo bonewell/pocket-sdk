@@ -20,7 +20,19 @@
 namespace bwgui
 {
 	
-struct MouseCorrection { float x, y; };
+class MouseCorrection
+{
+public:
+	MouseCorrection(float x, float y): x_{x}, y_{y} {}
+	void toggle() { enabled_ = !enabled_; }
+	float x() const { return enabled_ ? x_ : 1; }
+	float y() const { return enabled_ ? y_ : 1; }
+	operator bool() const { return enabled_; }
+
+private:
+	float x_, y_;
+	bool enabled_{false};
+};
 
 class Application
 {
@@ -50,10 +62,11 @@ private:
 	void DoWork();
 	void OnEvent(SDL_Event& event);
 	void Cleanup();
-	void DrawWindow();
+	void UpdateViewport();
 	void Delay() { SDL_Delay(delay_); }
 	void Clear() { SDL_RenderClear(renderer_); }
 	void Update() { SetBrushColor(renderer_, Black); SDL_RenderPresent(renderer_); }
+	void DrawToolkit();
 
 	std::string name_;
 	Size<int> size_{2266, 1075};
@@ -97,12 +110,21 @@ bool Application::Init()
 	return true;
 }
 
-void Application::DrawWindow()
+void Application::UpdateViewport()
 {	
 	auto size = GetSize();
 	SDL_Rect view{0, 0, size.w, size.h};
 	if (SDL_RenderSetViewport(renderer_, &view) != 0) LOG_ERROR();
 	if (SDL_RenderSetScale(renderer_, scale_, scale_) != 0) LOG_ERROR();
+}
+
+void Application::DrawToolkit()
+{
+	if (correction_)
+	{
+		SetBrushColor(renderer_, Red);
+		DrawRectangle(renderer_, background());
+	}
 }
 
 void Application::OnEvent(SDL_Event& event)
@@ -113,6 +135,7 @@ void Application::OnEvent(SDL_Event& event)
 		case SDL_KEYDOWN:
 			switch (event.key.keysym.sym)
 			{
+				case SDLK_m: correction_.toggle(); break;
 				case SDLK_h: scale_ -= 0.05; break;
 				case SDLK_j: scale_ += 0.05; break;
 				case SDLK_r: scale_ = 1.; break;
@@ -120,8 +143,8 @@ void Application::OnEvent(SDL_Event& event)
 		case SDL_MOUSEBUTTONUP:
 			if (event.button.clicks == 1)
 			{
-				const auto x = static_cast<int>(event.button.x * correction_.x / scale_);
-				const auto y = static_cast<int>(event.button.y * correction_.y / scale_);
+				const auto x = static_cast<int>(event.button.x * correction_.x() / scale_);
+				const auto y = static_cast<int>(event.button.y * correction_.y() / scale_);
 				OnClick({x, y});
 			}
 			break;
@@ -139,8 +162,9 @@ void Application::DoWork()
 {
 	OnLoop();
 	Clear();
-	DrawWindow();
+	UpdateViewport();
 	OnRender();
+	DrawToolkit();
 	Update();
 }
 
