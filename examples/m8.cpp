@@ -14,20 +14,20 @@ template<typename T>
 class Anime
 {
 public:
-	void Init(T const* node) { next_ = 0; node_ = node; steps_.clear(); }
-	void AddStep(T const* from, T const* to)
+	void Init(T* node) { next_ = 0; node_ = node; steps_.clear(); }
+	void AddStep(T* from, T* to)
 	{ steps_.emplace_back(from, to); }
 	void SetStyle(empire::GraphStyle const& style) { style_ = style; }
 	template<typename A> void Update(A& app);
 	bool IsFinished() const { return next_ >= steps_.size(); }
-	T const* node() const { return node_; }
+	T* node() const { return node_; }
 
 private:	
-	std::vector<std::pair<T const*, T const*>> steps_;
+	std::vector<std::pair<T*, T*>> steps_;
 
 	empire::GraphStyle style_{empire::BlackWhiteGraphStyle};
 	int next_{0};
-	T const* node_{nullptr};
+	T* node_{nullptr};
 };
 
 template<typename T>
@@ -62,7 +62,7 @@ public:
 private:
 	void Update();
 
-	Anime<typename graph_type::node_type> anime_;
+	Anime<typename graph_type::node_type> anime_; // TODO - use const node_type
 	Stage stage_{Stage::Idle};
 	std::vector<bwgui::Color> colors_;
 	int current_color_{0};
@@ -110,7 +110,7 @@ void App::Update()
 				anime_.SetStyle(style);
 				graph().traverse(
 					anime_.node(),
-					[this](auto const& l){ anime_.AddStep(l->from, l->to); },
+					[this](auto l){ anime_.AddStep(l->from, l->to); },
 					empire::Traverse::Depth);
 				current_color_ = (current_color_ + 1) % colors_.size();
 				stage_ = Stage::Width;
@@ -124,7 +124,7 @@ void App::Update()
 				anime_.SetStyle(style);
 				graph().traverse(
 					anime_.node(),
-					[this](auto const& l){ anime_.AddStep(l->from, l->to); },
+					[this](auto l){ anime_.AddStep(l->from, l->to); },
 					empire::Traverse::Width);
 				current_color_ = (current_color_ + 1) % colors_.size();
 				stage_ = Stage::Depth;

@@ -13,8 +13,8 @@ public:
 private:
 	vertex_type* from_{nullptr};
 
-	using node_type = typename graph_type::node_type;
-	std::vector<std::pair<node_type const*, node_type const*>> steps_;
+	using node_type = typename graph_type::node_type; // TODO - use const node_type
+	std::vector<std::pair<node_type*, node_type*>> steps_;
 	int next_{-1};
 };
 
@@ -94,7 +94,7 @@ int main()
 		{18, 19, 97}, {19, 18, 97}
 	};
 
-	auto graph = empire::make_graph<char, int>(values, links, std::greater<>{});
+	auto graph = empire::make_graph<char, int>(values, links);
 	empire::Grid grid{
 		{ 0,  1,  2,  3,  4},
 		{ 5,  6,  7,  8,  9},

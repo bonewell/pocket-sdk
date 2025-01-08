@@ -18,8 +18,8 @@ public:
 private:
 	vertex_type* from_{nullptr};
 
-	using node_type = typename graph_type::node_type;
-	std::vector<node_type const*> path_{empire::topologic_sort(graph())};
+	using node_type = typename graph_type::node_type; // TODO - use const node_type
+	std::vector<node_type*> path_{empire::topologic_sort(graph())};
 	int next_{0};
 };
 

@@ -49,7 +49,7 @@ struct ColorNode
 	using ColorNodeRefUSet = std::unordered_set<color_node_ref, Hash>;
 
 	ColorNode() = delete;
-	explicit ColorNode(T const* n): node{n} {}
+	explicit ColorNode(T* n): node{n} {}
 	ColorNode(color_node_ref k, color_node_ref m, color_node_ref n);
 
 	bool is_packed() const { return merged_.has_value(); }
@@ -64,7 +64,7 @@ struct ColorNode
 	void bind();
 	void unbind();
 
-	T const* node;
+	T* node;
 	ColorNodeRefUSet neighbors;
 
 private:
@@ -121,7 +121,7 @@ class Simplifier
 {
 public:
 	using node_type = typename T::node_type;
-	using color_node_ref = typename ColorNode<node_type>::color_node_ref;
+	using color_node_ref = typename ColorNode<node_type>::color_node_ref; // TODO - use const node_type
 	using ColorNodeRefList = std::list<color_node_ref>;
 
 	Simplifier(T& view);
@@ -148,7 +148,7 @@ private:
 	std::optional<Triple<color_node_ref>> pull_triple(ColorNodeRefList& vertexes) const;
 	color_node_ref merge(color_node_ref k, color_node_ref m, color_node_ref n);
 
-	std::vector<ColorNode<node_type>> color_nodes_;
+	std::vector<ColorNode<node_type>> color_nodes_; // TODO - use const node_type
 	ColorNodeRefList base_;
 	ColorNodeRefList extracted_;
 };

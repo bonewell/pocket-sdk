@@ -18,7 +18,7 @@ using Circle = bwgui::Circle<double>;
 using Triangle = bwgui::Triangle<double>;
 
 using VertexId = std::optional<int>;
-using Grid = std::vector<std::vector<VertexId>>;	
+using Grid = std::vector<std::vector<VertexId>>;
 
 struct Marker
 {

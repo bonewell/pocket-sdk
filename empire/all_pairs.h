@@ -23,7 +23,7 @@ public:
 		precalc();
 	}
 
-	std::vector<node_type const*> find_path(node_type const* from, node_type const* to) const
+	std::vector<node_type*> find_path(node_type* from, node_type* to) const
 	{
 		if (distance_.at(from).at(to) == inf<cost_type>) return {};
 		auto const via = via_.at(from).at(to);
@@ -45,7 +45,7 @@ private:
 	Distance distance_;
 
 	using Via = std::unordered_map<node_type const*,
-		std::unordered_map<node_type const*, node_type const*>>;
+		std::unordered_map<node_type const*, node_type*>>;
 	Via via_;
 };
 

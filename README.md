@@ -15,6 +15,9 @@ Header only SDK for Mobile C [C/C++ Compiler] to develop on mobile devices
 ## Build Webassembly
 ```./build.sh examples/ctree.cpp wasm```
 
+## Build all examples
+```./build.sh examples```
+
 # Dependencies
 1. SDL2 for GUI examples
 2. Emscripten for Webassembly

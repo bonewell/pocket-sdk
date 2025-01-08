@@ -20,7 +20,7 @@ public:
 	GraphGui(graph_type graph, empire::Grid const& grid,
 		empire::GraphStyle style = empire::BlackWhiteGraphStyle, int delay = 300)
 		: Application("graph_gui", delay),
-	  	  graph_{std::move(graph)},
+		  graph_{std::move(graph)},
 		  view_{empire::CreateView(graph_, grid, std::move(style))}{}
 
 	void reset() { view_.reset_styles(); }

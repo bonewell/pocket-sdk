@@ -12,11 +12,11 @@ public:
 	void OnLoop() override;
 	
 private:
-	empire::AllPairs<graph_type> all_pairs_{graph()};
+	empire::AllPairs<graph_type> all_pairs_{graph()}; // TODO - use const graph_type
 	vertex_type* from_{nullptr};
 
 	using node_type = typename graph_type::node_type;
-	std::vector<node_type const*> path_;
+	std::vector<node_type*> path_;
 	int next_{-1};
 };
 

@@ -7,7 +7,7 @@ namespace empire
 {
 
 template<typename T>
-std::vector<typename T::node_type const*> topologic_sort(T const& graph)
+std::vector<typename T::node_type*> topologic_sort(T const& graph)
 {
 	using node_type = typename T::node_type;
 
@@ -18,11 +18,11 @@ std::vector<typename T::node_type const*> topologic_sort(T const& graph)
 		for (auto const& l: n->links)
 			++dependencies[l.to];
 
-	std::queue<node_type const*> ready;
+	std::queue<node_type*> ready;
 	for (auto const& n: graph)
 		if (dependencies[n.get()] == 0) ready.push(n.get());
 	 
-	std::vector<node_type const*> ordering;
+	std::vector<node_type*> ordering;
 	while (!ready.empty())
 	{
 		auto n = ready.front();

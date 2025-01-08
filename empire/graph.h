@@ -56,8 +56,8 @@ NodePtr<T, U> make_node(T&& value)
 	return std::make_unique<Node<T, U>>(std::forward<T>(value));
 }
 
-template<typename N, typename F>
-void loop(N* node, F&& func, Traverse type)
+template<typename T, typename F>
+void loop(T* node, F&& func, Traverse type)
 {
 	switch(type) {
 		case Traverse::Depth: depth_traverse(node, std::forward<F>(func)); break;
