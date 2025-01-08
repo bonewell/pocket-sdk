@@ -19,7 +19,7 @@ private:
 
 template<typename T>
 TreeGui<T>::TreeGui(taiga::ThreadTree<T> tree)
-	: Application("tree_gui")
+	: Application("thread_tree_gui")
 {
 	view_ = taiga::CreateView(tree);
 }
@@ -38,5 +38,5 @@ int main()
 
 	TreeGui app{std::move(thread_tree)};
 
-	return app.Execute();
+	return app.Loop();
 }

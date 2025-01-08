@@ -94,5 +94,5 @@ int main()
 {
 	HilbertLine app{2};
 
-	return app.Execute();
+	return app.Loop();
 }

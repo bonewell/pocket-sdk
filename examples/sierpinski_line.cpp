@@ -134,5 +134,5 @@ int main()
 {
 	SierpinskiLine app{3};
 
-	return app.Execute();
+	return app.Loop();
 }

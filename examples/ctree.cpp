@@ -92,7 +92,7 @@ private:
 
 template<typename T>
 TreeGui<T>::TreeGui(taiga::ThreadTree<T> tree)
-	: Application("tree_gui", 50)
+	: Application("ctree", 50)
 {
 	view_ = ::CreateView(tree, NewYearTreeStyle);
 }

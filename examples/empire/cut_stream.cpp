@@ -48,5 +48,5 @@ int main()
 
 	App app{std::move(ab), grid};
 
-	return app.Execute();
+	return app.Loop();
 }

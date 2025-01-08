@@ -47,5 +47,5 @@ int main()
 
 	TreeGui app{std::move(tree)};
 
-	return app.Execute();
+	return app.Loop();
 }

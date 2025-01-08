@@ -89,5 +89,5 @@ int main()
 {
 	SierpinskiCarpet app{4};
 
-	return app.Execute();
+	return app.Loop();
 }

@@ -160,7 +160,7 @@ template <size_t N>
 class EightQueens : public bwgui::Application
 {
 public:
-	EightQueens() : bwgui::Application("sierpinski_carpet")
+	EightQueens() : bwgui::Application("eight_queens")
 	{
 		CreateBoard();
 	}
@@ -267,5 +267,5 @@ int main()
 {
 	EightQueens<8> app;
 
-	return app.Execute();
+	return app.Loop();
 }

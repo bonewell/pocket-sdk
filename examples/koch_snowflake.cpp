@@ -64,5 +64,5 @@ int main()
 {
 	KochSnowflake app{3, 80};
 
-	return app.Execute();
+	return app.Loop();
 }
